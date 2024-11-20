@@ -1,0 +1,86 @@
+.model small
+.stack 100h
+.data
+  charset db '0123456789ABCDEFGHIJKLMNOPQRSTUVWXYZ', 0 ; tabla de caracteres
+  random_index dw 0 ; índice aleatorio
+  random_chars db 4 dup('?') ; espacio para almacenar 4 caracteres aleatorios
+  count db 0 ; contador para el bucle
+
+.code
+start:
+    mov ax, @data    ; inicializa el segmento de datos
+    mov ds, ax
+
+    ; Generar 4 caracteres aleatorios
+    mov cx, 20       ; número de caracteres a generar
+    lea di, random_chars ; dirección de almacenamiento en random_chars
+generate_loop:
+    call get_random_index ; generar índice aleatorio
+    
+    ; Extraer el carácter basado en el índice aleatorio
+    mov al, byte ptr random_index ; corregido para acceder al byte bajo
+    mov ah, 0        ; limpiar el registro alto
+    lea si, charset  ; cargar la dirección de la tabla
+    add si, ax       ; sumar el índice para apuntar al carácter
+    mov al, [si]     ; cargar el carácter
+    mov [di], al     ; almacenar el carácter en random_chars
+    inc di           ; mover al siguiente espacio en random_chars
+    loop generate_loop ; repetir hasta generar 4 caracteres
+
+    ; Imprimir los caracteres generados
+    lea si, random_chars ; cargar la dirección de los caracteres generados
+    mov cx, 4            ; número de caracteres a imprimir
+print_loop:
+    mov dl, [si]         ; cargar el carácter en DL
+    mov ah, 02h          ; función para imprimir un carácter
+    int 21h              ; llamar a la interrupción de DOS
+    inc si               ; mover al siguiente carácter
+    loop print_loop      ; repetir hasta imprimir todos los caracteres
+    call sleep_time     ; esperamos un segundo
+    call limpiar_pantalla  ;limpiar pantalla luego de mostrar 
+    
+    ; Finalizar el programa
+    call end_program
+
+; Subrutina para generar un índice aleatorio entre 0 y 35
+get_random_index:
+    push cx         ; guardar cx en la pila
+    mov ah, 0h      ; interrumpir para obtener la hora en tiempo real del sistema
+    int 1ah         ; la hora se guardará en dx
+    pop cx          ; recuperar el valor original de cx
+    mov ax, dx      ; mover la hora a ax
+    xor dx, dx      ; limpiar dx
+    mov bx, 36      ; divisor para generar un número entre 0 y 35
+    div bx          ; divide ax por bx
+    mov random_index, dx ; almacenar el índice aleatorio en random_index
+    ret
+ limpiar_pantalla:         ;limpia la pantalla del MS-DOS
+        push ax ; save ax
+        push bx ; save bx
+        push cx ; save cx
+        push dx ; save dx
+        mov ah,00h
+        mov al,03h       
+        int 10h
+        pop dx ; restore dx
+        pop cx ; restore cx
+        pop bx ; restore bx
+        pop ax ; restore ax    
+        ret                   
+;subrutina para mantener el tiempo entre operaciones
+sleep_time:
+    push cx
+    push dx
+    mov ah,86h  ;la func que hace esperar
+    mov cx,000Fh  ;en este caso un millon de micro segundos
+    mov dx,4240h
+    int 15h         
+    pop dx
+    pop cx
+    ret
+; Finalizar el programa
+end_program:
+    mov ax, 4c00h
+    int 21h ; terminar y volver a DOS
+
+end start
