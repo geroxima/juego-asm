@@ -1,0 +1,35 @@
+.model small
+.stack 100h
+.data
+  random_num dw 0 ; variable para almacenar el numero aleatorio
+
+.code
+start:
+    mov ax, @data    ; inicializa el segmento de datos
+    mov ds, ax
+
+    call get_random_num ; llama a la subrutina para generar el numero aleatorio 
+   
+    call end_program
+    
+; subrutina para generar un numero aleatorio en el rango 0 a 9
+get_random_num:                      
+    push cx         ;guardo en la pila el valor de cx
+    mov ah, 0h      ;interrumpe para tener la hora en tiempo real del sistema
+    int 1ah         ;la hora se guardara en dx
+    pop cx          ;recupero el valor guardado en cx
+    mov ax, dx      ;mover la hora a ax
+    xor dx, dx      ;limpiar dx 
+    mov bx, 10      ; bx = 10 divisor para generar un numero entre 0 y 9
+    div bx          ; divide ax con bx  
+
+    mov random_num, dx ; se obtiene la division de dl y lo guarda en variable random_num 
+    ret
+
+
+;finaliza el programa    
+end_program:
+    mov ax, 4c00h
+    int 21h ; terminado, volver a dos
+    
+end start

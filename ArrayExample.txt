@@ -1,0 +1,158 @@
+.model small
+.stack 256
+    CR equ 13d
+    LF equ 10d
+
+
+.data    
+    ;Preguntas/Respuestas Nivel 1
+    preg1 db 'hola*rojo*perro', 0
+    resp1 db 80 dup (0)          
+    
+
+.code       
+
+start:  
+    mov ax, @data
+    mov ds, ax
+    mov ax, offset preg1
+                 
+    ; exhibe el mensaje               
+    call put_str 
+    
+    
+    call limpiar_pantalla  
+    
+        
+    ; lee lo que ingreso el usuario
+    mov ax, offset resp1      
+    call get_str   
+
+    ;Limpia pantalla
+    call limpiar_pantalla  
+    
+    ;Setea el contador de indices
+    mov SI, 0      
+    
+    
+    ;Compara lo que esta en preg1 y resp1 
+    call comparar
+    
+    call end_program 
+    
+    [0123456789ABCDEFGHIJKLMNOPQRSTUVWXYZ]
+    comparar:         
+         
+        mov bh, preg1[SI] 
+        
+        mov al, bh
+        call putc  
+         
+        cmp resp1[SI], bh   
+        
+        ;si son iguales
+        je incrementar
+        
+        ;Sino
+        jmp end_program
+        
+               
+        
+    incrementar:
+          inc SI
+          jmp comparar    
+          
+          
+    put_str: ; exhibe el caracter terminado con 0 cuya direccion esta en ax
+        push ax ; guarda registros
+        push bx
+        push cx
+        push dx
+        mov bx, ax ; almacena direccion en bx
+        mov al, byte ptr [bx] ; al = primer caracter en el string
+
+    put_loop: cmp al, 0 ; al == 0 ?
+        je put_fin ; mientras al != 0
+        call putc ; exhibe caracter
+        inc bx ; bx = bx + 1
+        mov al, byte ptr [bx] ; al = siguiente caracter en el string
+        jmp put_loop ; repite la prueba del bucle           
+        
+
+    put_fin:
+        pop dx ; 
+        pop cx
+        pop bx
+        pop ax
+        ret
+
+    get_str: ;  lee el string terminado por CR dentro del arreglo cuya direccion esta en ax
+        push ax ; guarda registros
+        push bx
+        push cx
+        push dx
+        mov bx, ax
+        call getc ; lee el primer caracter
+        mov byte ptr [bx], al ; En C: str[i] = al
+
+    get_loop:
+        cmp al, 13 ; al == CR ?
+        je get_fin ;mientras al != CR
+        inc bx ; bx = bx + 1
+        call getc ; lee el siguiente caracter
+        mov byte ptr [bx], al ; In C: str[i] = al      
+        
+        jmp get_loop ; repite la prueba del bucle
+
+    get_fin: mov byte ptr [bx], 0 ; string terminado con 0
+        pop dx ; 
+        pop cx
+        pop bx
+        pop ax
+        ret
+
+    putc: ; exhibe caracter en a1
+        push ax ; guarda ax
+        push bx ; guarda bx
+        push cx ; guarda cx
+        push dx ; guarda dx
+        mov dl, al
+        mov ah, 2h
+        int 21h
+        pop dx ; repone dx
+        pop cx ; repone cx
+        pop bx ; repone bx
+        pop ax ;repone ax
+        ret
+
+    getc: ; lee caracter dentro de al
+        push bx ; guarda bx
+        push cx ;guarda cx
+        push dx ; guarda dx
+        mov ah, 1h
+        int 21h
+        pop dx ; repone dx
+        pop cx ; repone cx
+        pop bx ; repone bx
+        ret   
+          
+        
+    limpiar_pantalla:         ;limpia la pantalla del MS-DOS
+        push ax ; save ax
+        push bx ; save bx
+        push cx ; save cx
+        push dx ; save dx
+        mov ah,00h
+        mov al,03h       
+        int 10h
+        pop dx ; restore dx
+        pop cx ; restore cx
+        pop bx ; restore bx
+        pop ax ; restore ax    
+        ret                   
+        
+    end_program:
+        mov ax, 4c00h
+        int 21h ; terminado, volver a dos    
+        
+end start    
