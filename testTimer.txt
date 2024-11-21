@@ -1,9 +1,13 @@
 .model small
-.stack 100h
-.data
-  charset db '0123456789ABCDEFGHIJKLMNOPQRSTUVWXYZ', 0 ; tabla de caracteres
+.stack 256h
+   CR equ 13d 
+  
+.data           
+  LV dw 5d
+  charset db '0123456789ABCDEFGHIJKLMNOPQRSTUVWXYZ', 0 ; tabla de caracteres 
+  resp1 db 10d dup (0)
   random_index dw 0 ; índice aleatorio
-  random_chars db 4 dup('?') ; espacio para almacenar 4 caracteres aleatorios
+  random_chars db 10d dup('?') ; espacio para almacenar 4 caracteres aleatorios
   count db 0 ; contador para el bucle
 
 .code
@@ -12,7 +16,7 @@ start:
     mov ds, ax
 
     ; Generar 4 caracteres aleatorios
-    mov cx, 20       ; número de caracteres a generar
+    mov cx, 10d       ; número de caracteres a generar
     lea di, random_chars ; dirección de almacenamiento en random_chars
 generate_loop:
     call get_random_index ; generar índice aleatorio
@@ -29,7 +33,13 @@ generate_loop:
 
     ; Imprimir los caracteres generados
     lea si, random_chars ; cargar la dirección de los caracteres generados
-    mov cx, 4            ; número de caracteres a imprimir
+    mov cx, 10d           ; número de caracteres a imprimir
+          
+      
+       
+                                                        
+                                                        
+                                                        
 print_loop:
     mov dl, [si]         ; cargar el carácter en DL
     mov ah, 02h          ; función para imprimir un carácter
@@ -39,9 +49,43 @@ print_loop:
     call sleep_time     ; esperamos un segundo
     call limpiar_pantalla  ;limpiar pantalla luego de mostrar 
     
-    ; Finalizar el programa
-    call end_program
-
+    mov ax, offset resp1        ;guardamos la direccion de inicio de la variable resp1 en ax
+    call get_str ;subrutina getstring
+    
+    call limpiar_pantalla ;limpiamos la pantalla
+    
+    mov si,0    ;seteamos el contador de indices
+    
+    call comparar;comparamos                                                         
+                                                        
+                                                        
+                                                        
+                                                        
+    ; Finalizar el programa                             
+    call end_program    
+    
+comparar:         
+         
+        mov bh, random_chars[SI] 
+        
+        mov al, bh
+        call putc  
+         
+        cmp resp1[SI], bh   
+        
+        ;si son iguales
+        je incrementar
+        
+        ;Sino
+        jmp end_program
+        
+               
+        
+    incrementar:
+          inc SI
+          jmp comparar    
+          
+   
 ; Subrutina para generar un índice aleatorio entre 0 y 35
 get_random_index:
     push cx         ; guardar cx en la pila
@@ -77,8 +121,54 @@ sleep_time:
     int 15h         
     pop dx
     pop cx
-    ret
-; Finalizar el programa
+    ret                                                         
+; Finalizar el programa  
+get_str: ;  lee el string terminado por CR dentro del arreglo cuya direccion esta en ax
+        push ax ; guarda registros
+        push bx
+        push cx
+        push dx
+        mov bx, ax
+        call getc ; lee el primer caracter
+        mov byte ptr [bx], al ; En C: str[i] = al
+ get_loop:
+        cmp al, 13 ; al == CR ?
+        je get_fin ;mientras al != CR
+        inc bx ; bx = bx + 1
+        call getc ; lee el siguiente caracter
+        mov byte ptr [bx], al ; In C: str[i] = al      
+        
+        jmp get_loop ; repite la prueba del bucle
+ get_fin: mov byte ptr [bx], 0 ; string terminado con 0
+        pop dx ; 
+        pop cx
+        pop bx
+        pop ax
+        ret
+
+getc: ; lee caracter dentro de al
+        push bx ; guarda bx
+        push cx ;guarda cx
+        push dx ; guarda dx
+        mov ah, 1h
+        int 21h
+        pop dx ; repone dx
+        pop cx ; repone cx
+        pop bx ; repone bx
+        ret   
+ putc: ; exhibe caracter en al
+        push ax ; guarda ax
+        push bx ; guarda bx
+        push cx ; guarda cx
+        push dx ; guarda dx
+        mov dl, al
+        mov ah, 2h
+        int 21h
+        pop dx ; repone dx
+        pop cx ; repone cx
+        pop bx ; repone bx
+        pop ax ;repone ax
+        ret          
 end_program:
     mov ax, 4c00h
     int 21h ; terminar y volver a DOS
