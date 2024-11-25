@@ -44,11 +44,11 @@ print_loop:
     int  21h                                              ; llamar a la interrupción de DOS
     inc  si                                               ; mover al siguiente carácter
     loop print_loop                                       ; repetir hasta imprimir todos los caracteres
-    call sleep_time                                       ; esperamos un segundo
-    call limpiar_pantalla                                 ; limpiar pantalla luego de mostrar
+    call sleep_time                                       ; esperamos un segundo                                 ; limpiar pantalla luego de mostrar
+    call fill_line_with_spaces
     mov  ax, offset resp1                                 ; guardamos la direccion de inicio de la variable resp1 en ax
     call get_str                                          ; subrutina getstring
-    call limpiar_pantalla                                 ; limpiamos la pantalla
+    call fill_line_with_spaces                                 ; limpiamos la pantalla
     mov  si, 0                                            ; seteamos el contador de indices
     call comparar                                         ; comparamos
                                                           ; Finalizar el programa
@@ -104,6 +104,19 @@ limpiar_pantalla:                                         ; limpia la pantalla d
     pop  bx                                               ; restore bx
     pop  ax                                               ; restore ax
     ret
+fill_line_with_spaces:
+    mov ah, 02h                                            ; Interrupcion para imprimir en pantalla
+    mov dl, 13                                             ; Codigo ASCII para Carriadge return
+    int 21h                                                ; Mostrar carriage return
+    mov cx, char_count                                     ; Definir el contado igual que la cantidad de caracteres
+fill_loop:
+    mov dl, 95                                             ; Codigo ASCII para '_'
+    int 21h                                                ; Imprimir caracter '_'
+    loop fill_loop                                         ; Decrementar CX y repetir hasta que CX = 0
+    mov dl, 13                                             ; Volver al principio de línea
+    int 21h
+    ret
+
     ; subrutina para mantener el tiempo entre operaciones
 sleep_time:
     push cx
