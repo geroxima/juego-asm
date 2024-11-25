@@ -7,7 +7,7 @@ charset      db '0123456789ABCDEFGHIJKLMNOPQRSTUVWXYZ', 0 ; tabla de caracteres
 resp1        db 10d dup (0)                               ; respuesta del usuario
 random_index dw 0                                         ; índice aleatorio
 char_count   dw 4                                         ; contador para el bucle
-random_chars db 10d dup('?')                              ; espacio para almacenar 4 caracteres aleatorios
+random_chars db 10d dup('?')                              ; espacio para almacenar 10 caracteres aleatorios
 user_points  dw 0
 points_msg   db 'Puntos: ', '$'
 win_msg      db '¡Ganaste! ¿Que deseas hacer?', 13d, 10d, '0. Reiniciar Juego', 13d, 10d, '1. Salir del juego', 13d, 10d, '? $'	
