@@ -182,19 +182,19 @@ print_digits:
     pop ax
     ret
 win_message:
-    lea dx, win_msg                                      ; Load the address of the winning message
-    mov ah, 09h                                          ; DOS function to display a string
-    int 21h                                              ; Call DOS interrupt
+    lea dx, win_msg                                      ; Cargo el mensaje de victoria
+    mov ah, 09h                                          ; Función de impresión de cadena
+    int 21h                                              ; Imprimir el mensaje
 
-    mov ah, 01h                                          ; DOS function to read a character from standard input
-    int 21h                                              ; Call DOS interrupt
-    cmp al, '0'                                           ; Compare the input character with '0'
-    jne end_program                                      ; If the input is '0', jump to start (restart the game)
+    mov ah, 01h                                          ; Leer un carácter del teclado
+    int 21h                                              ; Leer el carácter
+    cmp al, '0'                                          ; Comparar el carácter con '0'
+    jne end_program                                      ; Si no es '0', finalizar el programa
 restart_game:
     call limpiar_pantalla
-    mov char_count, 4                                    ; Reset the character count to 4
-    mov user_points, 0                                   ; Reset the user points to 0
-    jmp start                                            ; Restart the game
+    mov char_count, 4                                    ; Restablecer la longitud de la secuencia a 4
+    mov user_points, 0                                   ; Restablecer los puntos del usuario a 0
+    jmp start                                            ; Reiniciar el juego
 end_program:
     call limpiar_pantalla
     lea dx, points_msg
