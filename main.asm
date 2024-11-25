@@ -10,6 +10,8 @@ char_count   dw 4                                         ; contador para el buc
 random_chars db 10d dup('?')                              ; espacio para almacenar 10 caracteres aleatorios
 user_points  dw 0
 points_msg   db 'Puntos: ', '$'
+level_msg    db 'Nivel: ', '$'
+level        dw 1
 win_msg      db '¡Ganaste! ¿Que deseas hacer?', 13d, 10d, '0. Reiniciar Juego', 13d, 10d, '1. Salir del juego', 13d, 10d, '? $'	
 
 .code
@@ -20,6 +22,7 @@ start:
     ; Generar 4 caracteres aleatorios
     mov cx, char_count                                    ; número de caracteres a generar
     lea di, random_chars                                  ; dirección de almacenamiento en random_chars
+    call level_message                                    ; mostrar el mensaje de nivel
 generate_loop:
     call get_random_index                                 ; generar índice aleatorio
                                                           ; Extraer el carácter basado en el índice aleatorio
@@ -73,6 +76,7 @@ incrementar:
     jge win_message                                       ; Si char_count >= 10, mostrar el mensaje de victoria
 
     inc char_count                                        ; De lo contrario, aumentar la longitud de la secuencia
+    inc level                                             ; Aumentar el nivel
     jmp start                                             ; Reiniciar el juego
 
                                                           ; Subrutina para generar un índice aleatorio entre 0 y 35
@@ -181,11 +185,23 @@ print_digits:
     pop bx
     pop ax
     ret
+level_message:
+    lea dx, level_msg                                    ; Cargar el mensaje de nivel
+    mov ah, 09h                                          ; Función de impresión de cadena
+    int 21h                                              ; Imprimir el mensaje
+    mov ax, level                                        ; Cargar el nivel actual
+    call print_number                                    ; Llamar a una subrutina para imprimir el número
+    mov dl, 13d                                          ; Código ASCII de retorno de carro
+    mov ah, 02h                                          ; Función de impresión de carácter
+    int 21h                                              ; Llamar a la interrupción de DOS
+    mov dl, 10d                                          ; Código ASCII de nueva línea
+    mov ah, 02h                                          ; Función de impresión de carácter
+    int 21h                                              ; Llamar a la interrupción de DOS
+    ret
 win_message:
     lea dx, win_msg                                      ; Cargo el mensaje de victoria
     mov ah, 09h                                          ; Función de impresión de cadena
     int 21h                                              ; Imprimir el mensaje
-
     mov ah, 01h                                          ; Leer un carácter del teclado
     int 21h                                              ; Leer el carácter
     cmp al, '0'                                          ; Comparar el carácter con '0'
@@ -194,6 +210,7 @@ restart_game:
     call limpiar_pantalla
     mov char_count, 4                                    ; Restablecer la longitud de la secuencia a 4
     mov user_points, 0                                   ; Restablecer los puntos del usuario a 0
+    mov level, 1                                         ; Restablecer el nivel a 1
     jmp start                                            ; Reiniciar el juego
 end_program:
     call limpiar_pantalla
