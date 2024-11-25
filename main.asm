@@ -10,6 +10,7 @@ char_count   dw 4                                         ; contador para el buc
 random_chars db 10d dup('?')                              ; espacio para almacenar 4 caracteres aleatorios
 user_points  dw 0
 points_msg   db 'Puntos: ', '$'
+win_msg      db '¡Ganaste! ¿Que deseas hacer?', 13d, 10d, '0. Reiniciar Juego', 13d, 10d, '1. Salir del juego', 13d, 10d, '? $'	
 
 .code
 start:
@@ -69,7 +70,7 @@ incrementar:
     mov user_points, ax                                   ; Actualizar user_points
 
     cmp char_count, 10                                    ; Verificar si char_count ha alcanzado el límite máximo (10)
-    jge end_program                                       ; Si char_count >= 10, terminar el programa
+    jge win_message                                       ; Si char_count >= 10, mostrar el mensaje de victoria
 
     inc char_count                                        ; De lo contrario, aumentar la longitud de la secuencia
     jmp start                                             ; Reiniciar el juego
@@ -180,6 +181,20 @@ print_digits:
     pop bx
     pop ax
     ret
+win_message:
+    lea dx, win_msg                                      ; Load the address of the winning message
+    mov ah, 09h                                          ; DOS function to display a string
+    int 21h                                              ; Call DOS interrupt
+
+    mov ah, 01h                                          ; DOS function to read a character from standard input
+    int 21h                                              ; Call DOS interrupt
+    cmp al, '0'                                           ; Compare the input character with '0'
+    jne end_program                                      ; If the input is '0', jump to start (restart the game)
+restart_game:
+    call limpiar_pantalla
+    mov char_count, 4                                    ; Reset the character count to 4
+    mov user_points, 0                                   ; Reset the user points to 0
+    jmp start                                            ; Restart the game
 end_program:
     call limpiar_pantalla
     lea dx, points_msg
