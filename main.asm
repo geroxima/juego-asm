@@ -6,7 +6,7 @@ CR equ 13d
 charset      db '0123456789ABCDEFGHIJKLMNOPQRSTUVWXYZ', 0 ; tabla de caracteres
 resp1        db 10d dup (0)                               ; respuesta del usuario
 random_index dw 0                                         ; índice aleatorio
-char_count   dw 4                                         ; contador para el bucle
+char_count   dw 5                                         ; contador para el bucle
 random_chars db 10d dup('?')                              ; espacio para almacenar 10 caracteres aleatorios
 user_points  dw 0
 points_msg   db 'Puntos: ', '$'
@@ -221,7 +221,7 @@ win_message:
     jne end_program                                      ; Si no es '0', finalizar el programa
 restart_game:
     call limpiar_pantalla
-    mov char_count, 4                                    ; Restablecer la longitud de la secuencia a 4
+    mov char_count, 5                                    ; Restablecer la longitud de la secuencia a 4
     mov user_points, 0                                   ; Restablecer los puntos del usuario a 0
     mov level, 1                                         ; Restablecer el nivel a 1
     jmp start                                            ; Reiniciar el juego
