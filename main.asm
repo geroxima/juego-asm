@@ -12,7 +12,7 @@ user_points  dw 0
 points_msg   db 'Puntos: ', '$'
 level_msg    db 'Nivel: ', '$'
 level        dw 1
-win_msg      db '¡Ganaste! ¿Que deseas hacer?', 13d, 10d, '0. Reiniciar Juego', 13d, 10d, '1. Salir del juego', 13d, 10d, '? $'	
+win_msg      db 'Ganaste! Que deseas hacer?', 7, 7, 13d, 10d, '0. Reiniciar Juego', 13d, 10d, '1. Salir del juego', 13d, 10d, '? $'	
 
 .code
 start:
