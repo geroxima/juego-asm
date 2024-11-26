@@ -1,4 +1,4 @@
-.model small
+                                                                  .model small
 .stack 256h
 CR equ 13d
 
@@ -9,7 +9,7 @@ random_index dw 0                                         ; índice aleatorio
 char_count   dw 5                                         ; contador para el bucle
 random_chars db 10d dup('?')                              ; espacio para almacenar 10 caracteres aleatorios
 user_points  dw 0
-points_msg   db 'Puntos: ', '$'
+points_msg   db 'Juego Terminado. Puntos: ', '$'
 level_msg    db 'Nivel: ', '$'
 level        dw 1   
 memorize_msg db 'Memoriza la Secuencia: ','$'
@@ -25,7 +25,9 @@ start:
     ; Generar 4 caracteres aleatorios
     mov cx, char_count                                    ; número de caracteres a generar
     lea di, random_chars                                  ; dirección de almacenamiento en random_chars
-    call level_message                                    ; mostrar el mensaje de nivel
+    call level_message                                    ; mostrar el mensaje de nivel  
+    lea dx,memorize_msg
+    call put_str
 generate_loop:
     call get_random_index                                 ; generar índice aleatorio
                                                           ; Extraer el carácter basado en el índice aleatorio
@@ -48,7 +50,18 @@ print_loop:
     inc  si                                               ; mover al siguiente carácter
     loop print_loop                                       ; repetir hasta imprimir todos los caracteres
     call sleep_time                                       ; esperamos un segundo                       
-                                                          ; limpiar pantalla luego de mostrar
+                                         ; limpiar pantalla luego de mostrar  
+    call fill_line_with_null   
+
+    lea dx,input_msg
+    call put_str
+    mov dl, 13d                                          ; Código ASCII de retorno de carro
+    mov ah, 02h                                          ; Función de impresión de carácter
+    int 21h                                              ; Llamar a la interrupción de DOS
+    mov dl, 10d                                          ; Código ASCII de nueva línea
+    mov ah, 02h                                          ; Función de impresión de carácter
+    int 21h 
+    
     call fill_line_with_spaces
     mov  ax, offset resp1                                 ; guardamos la direccion de inicio de la variable resp1 en ax
     call get_str                                          ; subrutina getstring
@@ -70,7 +83,17 @@ incrementar:
     cmp SI, char_count                                    ; Verificar si todos los caracteres han sido comparados
     jl comparar                                           ; Si no, continuar comparando
 
-                                                          ; Si todos los caracteres coinciden:
+                                                          ; Si todos los caracteres coinciden: 
+    mov dl, 13d                                          ; Código ASCII de retorno de carro
+    mov ah, 02h                                          ; Función de impresión de carácter
+    int 21h                                              ; Llamar a la interrupción de DOS
+    mov dl, 10d                                          ; Código ASCII de nueva línea
+    mov ah, 02h                                          ; Función de impresión de carácter
+    int 21h 
+    
+    lea dx,next_msg
+    call put_str 
+    call sleep_time
     call limpiar_pantalla                                 ; Limpiar la pantalla
     mov ax, user_points
     add ax, char_count                                    ; Sumar el valor actual de char_count a user_points
@@ -112,15 +135,22 @@ fill_line_with_spaces:
     mov ah, 02h                                            ; Interrupcion para imprimir en pantalla
     mov dl, 13                                             ; Codigo ASCII para Carriadge return
     int 21h                                                ; Mostrar carriage return
-    mov cx, char_count                                     ; Definir el contado igual que la cantidad de caracteres
+    mov cx, char_count 
+    mov dl, 95                                     ; Definir el contado igual que la cantidad de caracteres
 fill_loop:
-    mov dl, 95                                             ; Codigo ASCII para '_'
+                                                ; Codigo ASCII para '_'
     int 21h                                                ; Imprimir caracter '_'
     loop fill_loop                                         ; Decrementar CX y repetir hasta que CX = 0
     mov dl, 13                                             ; Volver al principio de línea
     int 21h
     ret
-
+fill_line_with_null:
+    mov ah, 02h
+    mov dl, 13
+    int 21h
+    mov cx, 30d 
+    mov dl, 0 
+    call fill_loop:
     ; subrutina para mantener el tiempo entre operaciones
 sleep_time:
     push cx
