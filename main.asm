@@ -6,23 +6,35 @@ CR equ 13d
 charset      db '0123456789ABCDEFGHIJKLMNOPQRSTUVWXYZ', 0 ; tabla de caracteres
 resp1        db 10d dup (0)                               ; respuesta del usuario
 random_index dw 0                                         ; índice aleatorio
-char_count   dw 5                                         ; contador para el bucle
+char_count   dw 10                                         ; contador para el bucle
 random_chars db 10d dup('?')                              ; espacio para almacenar 10 caracteres aleatorios
 user_points  dw 0
-points_msg   db 'Puntos: ', '$'
+points_msg   db 'Juego Terminado. Puntos: ', '$'
 level_msg    db 'Nivel: ', '$'
-level        dw 1
-win_msg      db 'Ganaste! Que deseas hacer?', 7, 7, 13d, 10d, '0. Reiniciar Juego', 13d, 10d, '1. Salir del juego', 13d, 10d, '? $'	
+level        dw 1   
+memorize_msg db 'Memoriza la Secuencia: ','$'
+input_msg    db 'Ingresa la Secuencia: ','$'
+next_msg     db 'Correcto! Siguiente ronda: ','$'
+win_msg      db '¡Ganaste! ¿Que deseas hacer?', 13d, 10d, '0. Reiniciar Juego', 13d, 10d, '1. Salir del juego', 13d, 10d, '? $'	
+timeout_msg  db 'Tiempo excedido. Inténtalo de nuevo.', 13d, 10d, '$'
+time_limit   dw 365d                                      ; límite de tiempo en tics (10 segundos aprox)
+start_time   dw 0                                         ; tiempo de inicio
 
 .code
 start:
     mov ax, @data                                         ; inicializa el segmento de datos
     mov ds, ax
 
+    ; Obtener el tiempo de inicio antes de mostrar la secuencia
+    call get_current_time
+    mov start_time, dx                                    ; guardar el tiempo de inicio
+
     ; Generar 4 caracteres aleatorios
     mov cx, char_count                                    ; número de caracteres a generar
     lea di, random_chars                                  ; dirección de almacenamiento en random_chars
-    call level_message                                    ; mostrar el mensaje de nivel
+    call level_message                                    ; mostrar el mensaje de nivel  
+    lea dx,memorize_msg
+    call put_str
 generate_loop:
     call get_random_index                                 ; generar índice aleatorio
                                                           ; Extraer el carácter basado en el índice aleatorio
@@ -44,15 +56,45 @@ print_loop:
     int  21h                                              ; llamar a la interrupción de DOS
     inc  si                                               ; mover al siguiente carácter
     loop print_loop                                       ; repetir hasta imprimir todos los caracteres
-    call sleep_time                                       ; esperamos un segundo                                 ; limpiar pantalla luego de mostrar
+    call sleep_time                                       ; esperamos un segundo                       
+                                         ; limpiar pantalla luego de mostrar  
+    call fill_line_with_null   
+
+    lea dx,input_msg
+    call put_str
+    mov dl, 13d                                          ; Código ASCII de retorno de carro
+    mov ah, 02h                                          ; Función de impresión de carácter
+    int 21h                                              ; Llamar a la interrupción de DOS
+    mov dl, 10d                                          ; Código ASCII de nueva línea
+    mov ah, 02h                                          ; Función de impresión de carácter
+    int 21h
+
     call fill_line_with_spaces
     mov  ax, offset resp1                                 ; guardamos la direccion de inicio de la variable resp1 en ax
     call get_str                                          ; subrutina getstring
-    call fill_line_with_spaces                                 ; limpiamos la pantalla
+    call fill_line_with_spaces                                         ; subrutina getstring
+
+    ; Obtener el tiempo actual después de que el usuario ingresa su respuesta
+    call get_current_time
+
+    ; Comparar el tiempo transcurrido con el límite
+    mov ax, dx                                            ; tiempo actual
+    sub ax, start_time                                    ; restar el tiempo de inicio
+    cmp ax, time_limit                                    ; comparar con el límite de 10 segundos
+    jg timeout                                            ; si ha pasado más de 10 segundos, ir a timeout
+
+    ; Continuar con la comparación de la secuencia si el tiempo es correcto
     mov  si, 0                                            ; seteamos el contador de indices
     call comparar                                         ; comparamos
                                                           ; Finalizar el programa
     call end_program
+
+timeout:
+    lea dx, timeout_msg                                   ; cargar mensaje de tiempo excedido
+    call put_str                                          ; mostrar el mensaje
+    call sleep_time  
+    call end_program                                      ; terminar el programa
+
 comparar:
     mov bh, random_chars[SI]                              ; Cargar el carácter actual de la secuencia
     mov al, bh                                            ; Cargar el carácter en AL
@@ -65,8 +107,17 @@ incrementar:
     inc SI                                                ; Mover al siguiente carácter en la secuencia
     cmp SI, char_count                                    ; Verificar si todos los caracteres han sido comparados
     jl comparar                                           ; Si no, continuar comparando
-
-                                                          ; Si todos los caracteres coinciden:
+    
+    mov dl, 13d                                          ; Código ASCII de retorno de carro
+    mov ah, 02h                                          ; Función de impresión de carácter
+    int 21h                                              ; Llamar a la interrupción de DOS
+    mov dl, 10d                                          ; Código ASCII de nueva línea
+    mov ah, 02h                                          ; Función de impresión de carácter
+    int 21h 
+                                                          ; Si todos los caracteres coinciden: 
+    lea dx, next_msg
+    call put_str 
+    call sleep_time
     call limpiar_pantalla                                 ; Limpiar la pantalla
     mov ax, user_points
     add ax, char_count                                    ; Sumar el valor actual de char_count a user_points
@@ -79,7 +130,12 @@ incrementar:
     inc level                                             ; Aumentar el nivel
     jmp start                                             ; Reiniciar el juego
 
-                                                          ; Subrutina para generar un índice aleatorio entre 0 y 35
+get_current_time:
+    mov ah, 00h                                           ; función para obtener la hora del sistema en tics
+    int 1Ah                                               ; llamada a la interrupción de DOS
+    ret
+
+                                                    ; Subrutina para generar un índice aleatorio entre 0 y 35
 get_random_index:
     push cx                                               ; guardar cx en la pila
     mov  ah, 0h                                           ; interrumpir para obtener la hora en tiempo real del sistema
@@ -108,15 +164,22 @@ fill_line_with_spaces:
     mov ah, 02h                                            ; Interrupcion para imprimir en pantalla
     mov dl, 13                                             ; Codigo ASCII para Carriadge return
     int 21h                                                ; Mostrar carriage return
-    mov cx, char_count                                     ; Definir el contado igual que la cantidad de caracteres
+    mov cx, char_count 
+    mov dl, 95                                     ; Definir el contado igual que la cantidad de caracteres
 fill_loop:
-    mov dl, 95                                             ; Codigo ASCII para '_'
+                                                ; Codigo ASCII para '_'
     int 21h                                                ; Imprimir caracter '_'
     loop fill_loop                                         ; Decrementar CX y repetir hasta que CX = 0
     mov dl, 13                                             ; Volver al principio de línea
     int 21h
     ret
-
+fill_line_with_null:
+    mov ah, 02h
+    mov dl, 13
+    int 21h
+    mov cx, 40d 
+    mov dl, 0 
+    call fill_loop:
     ; subrutina para mantener el tiempo entre operaciones
 sleep_time:
     push cx
@@ -200,8 +263,7 @@ print_digits:
     ret
 level_message:
     lea dx, level_msg                                    ; Cargar el mensaje de nivel
-    mov ah, 09h                                          ; Función de impresión de cadena
-    int 21h                                              ; Imprimir el mensaje
+    call put_str                                             ; Imprimir el mensaje
     mov ax, level                                        ; Cargar el nivel actual
     call print_number                                    ; Llamar a una subrutina para imprimir el número
     mov dl, 13d                                          ; Código ASCII de retorno de carro
@@ -213,8 +275,8 @@ level_message:
     ret
 win_message:
     lea dx, win_msg                                      ; Cargo el mensaje de victoria
-    mov ah, 09h                                          ; Función de impresión de cadena
-    int 21h                                              ; Imprimir el mensaje
+    call put_str; Función de impresión de cadena
+                                                 ; Imprimir el mensaje
     mov ah, 01h                                          ; Leer un carácter del teclado
     int 21h                                              ; Leer el carácter
     cmp al, '0'                                          ; Comparar el carácter con '0'
@@ -227,12 +289,17 @@ restart_game:
     jmp start                                            ; Reiniciar el juego
 end_program:
     call limpiar_pantalla
-    lea dx, points_msg
-    mov ah, 09h
-    int 21h
+    lea dx, points_msg   
+    call put_str
     ; Convertir user_points a cadena para imprimir
     mov ax, user_points
     call print_number                                     ; Llamar a una subrutina para imprimir el número
     mov ax, 4c00h
-    int 21h                                               ; terminar y volver a DOS
+    int 21h                                               ; terminar y volver a DOS   
+put_str:   
+push dx
+mov ah,09h
+int 21h
+pop dx
+ret
 end start
