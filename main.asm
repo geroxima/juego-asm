@@ -11,7 +11,10 @@ random_chars db 10d dup('?')                              ; espacio para almacen
 user_points  dw 0
 points_msg   db 'Puntos: ', '$'
 level_msg    db 'Nivel: ', '$'
-level        dw 1
+level        dw 1   
+memorize_msg db 'Memoriza la Secuencia: ','$'
+input_msg db 'Ingresa la Secuencia: ','$'
+next_msg db 'Correcto!Siguiente ronda: ','$'
 win_msg      db '¡Ganaste! ¿Que deseas hacer?', 13d, 10d, '0. Reiniciar Juego', 13d, 10d, '1. Salir del juego', 13d, 10d, '? $'	
 
 .code
@@ -44,7 +47,8 @@ print_loop:
     int  21h                                              ; llamar a la interrupción de DOS
     inc  si                                               ; mover al siguiente carácter
     loop print_loop                                       ; repetir hasta imprimir todos los caracteres
-    call sleep_time                                       ; esperamos un segundo                                 ; limpiar pantalla luego de mostrar
+    call sleep_time                                       ; esperamos un segundo                       
+                                                          ; limpiar pantalla luego de mostrar
     call fill_line_with_spaces
     mov  ax, offset resp1                                 ; guardamos la direccion de inicio de la variable resp1 en ax
     call get_str                                          ; subrutina getstring
@@ -200,8 +204,7 @@ print_digits:
     ret
 level_message:
     lea dx, level_msg                                    ; Cargar el mensaje de nivel
-    mov ah, 09h                                          ; Función de impresión de cadena
-    int 21h                                              ; Imprimir el mensaje
+    call put_str                                             ; Imprimir el mensaje
     mov ax, level                                        ; Cargar el nivel actual
     call print_number                                    ; Llamar a una subrutina para imprimir el número
     mov dl, 13d                                          ; Código ASCII de retorno de carro
@@ -213,8 +216,8 @@ level_message:
     ret
 win_message:
     lea dx, win_msg                                      ; Cargo el mensaje de victoria
-    mov ah, 09h                                          ; Función de impresión de cadena
-    int 21h                                              ; Imprimir el mensaje
+    call put_str; Función de impresión de cadena
+                                                 ; Imprimir el mensaje
     mov ah, 01h                                          ; Leer un carácter del teclado
     int 21h                                              ; Leer el carácter
     cmp al, '0'                                          ; Comparar el carácter con '0'
@@ -227,12 +230,17 @@ restart_game:
     jmp start                                            ; Reiniciar el juego
 end_program:
     call limpiar_pantalla
-    lea dx, points_msg
-    mov ah, 09h
-    int 21h
+    lea dx, points_msg   
+    call put_str
     ; Convertir user_points a cadena para imprimir
     mov ax, user_points
     call print_number                                     ; Llamar a una subrutina para imprimir el número
     mov ax, 4c00h
-    int 21h                                               ; terminar y volver a DOS
+    int 21h                                               ; terminar y volver a DOS   
+put_str:   
+push dx
+mov ah,09h
+int 21h
+pop dx
+ret
 end start
