@@ -17,6 +17,7 @@ CR equ 13d
     next_msg     db 'Correcto! Siguiente ronda: ','$'
     win_msg      db '¡Ganaste! ¿Que deseas hacer?', 13d, 10d, '0. Reiniciar Juego', 13d, 10d, '1. Salir del juego', 13d, 10d, '? $'
     timeout_msg  db 'Tiempo excedido. Intentalo de nuevo.', 13d, 10d, '$'
+    restart_msg  db 'Reiniciando el juego...', 13d, 10d, '$'
     time_limit   dw 365d                                      ; límite de tiempo en tics (10 segundos aprox)
     start_time   dw 0                                         ; tiempo de inicio
 .code
@@ -264,6 +265,10 @@ win_message:
     cmp al, '0'                                               ; Comparar el carácter con '0'
     jne end_program                                           ; Si no es '0', finalizar el programa
 restart_game:
+    call limpiar_pantalla                                     ; Limpiar la pantalla
+    lea dx, restart_msg                                       ; Cargar el mensaje de reinicio
+    call put_str                                              ; Mostrar el mensaje
+    call sleep_time                                           ; Esperar un segundo
     call limpiar_pantalla
     mov char_count, 5                                         ; Restablecer la longitud de la secuencia a 4
     mov user_points, 0                                        ; Restablecer los puntos del usuario a 0
